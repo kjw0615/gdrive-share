@@ -83,12 +83,12 @@ def metadata(fid):
         if fid == ROOT:
             return dict(id=ROOT, name='공유 자료실', mimeType=FOLDER)
         return next((x for x in DEMO if x['id'] == fid), None)
-    return api('files/' + fid, dict(fields='id,name,mimeType,parents,webContentLink,webViewLink,capabilities(canDownload)', supportsAllDrives='true'))
+    return api('files/' + fid, dict(fields='id,name,mimeType,parents,webContentLink,webViewLink,exportLinks,capabilities(canDownload)', supportsAllDrives='true'))
 
 def list_children(fid):
     if not LIVE:
         return [dict(x) for x in DEMO if fid in x['parents']]
-    params = dict(q=f"'{fid}' in parents and trashed = false", fields='nextPageToken,files(id,name,mimeType,size,modifiedTime,capabilities(canDownload))', pageSize=100, orderBy='folder,name', supportsAllDrives='true', includeItemsFromAllDrives='true')
+    params = dict(q=f"'{fid}' in parents and trashed = false", fields='nextPageToken,files(id,name,mimeType,size,capabilities(canDownload))', pageSize=100, orderBy='folder,name', supportsAllDrives='true', includeItemsFromAllDrives='true')
     items = []
     while True:
         result = api('files', params)
@@ -116,6 +116,23 @@ def within_root(fid, path=''):
         trail.append(dict(id=child_id, name=current['name'], path='/'.join(ids[:index+1])))
     return trail, current
 
+EXPORTS = {
+    'application/vnd.google-apps.document': ('application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'docx', 'document'),
+    'application/vnd.google-apps.spreadsheet': ('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx', 'spreadsheets'),
+    'application/vnd.google-apps.presentation': ('application/vnd.openxmlformats-officedocument.presentationml.presentation', 'pptx', 'presentation'),
+}
+
+
+def can_open(item):
+    mime = item.get('mimeType', '')
+    return (mime in EXPORTS or mime in ('application/pdf', 'text/plain', 'text/csv',
+            'application/msword', 'application/vnd.ms-excel', 'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation')
+            or mime.startswith(('image/', 'audio/', 'video/')))
+
+
 app = Flask(__name__, static_folder=None)
 app.json.ensure_ascii = False
 
@@ -141,7 +158,22 @@ def files():
     items = list_children(fid)
     for item in items:
         item['path'] = trail[-1]['path'] + '/' + item['id']
+        item['canOpen'] = can_open(item)
+        item['downloadFormat'] = EXPORTS.get(item['mimeType'], ('', '', ''))[1]
     return jsonify(files=items, breadcrumbs=trail, demo=not LIVE)
+
+
+@app.get('/open')
+def open_file():
+    fid = request.args.get('id', '')
+    within_root(fid, request.args.get('path', ''))
+    item = metadata(fid)
+    if not can_open(item):
+        raise ValueError('이 파일 형식은 바로열기를 지원하지 않습니다.')
+    target = item.get('webViewLink')
+    if not target and item['mimeType'] in EXPORTS:
+        target = 'https://docs.google.com/' + EXPORTS[item['mimeType']][2] + '/d/' + fid + '/edit'
+    return redirect(target or ('https://drive.google.com/file/d/' + fid + '/view'), code=302)
 
 
 @app.get('/download')
@@ -156,7 +188,15 @@ def download():
                         mimetype='text/plain', headers={'Content-Disposition': 'attachment; filename="example.txt"'})
     if item.get('capabilities', {}).get('canDownload') is False:
         raise ValueError('소유자가 다운로드를 허용하지 않은 파일입니다.')
-    target = item.get('webContentLink') or item.get('webViewLink') or ('https://drive.google.com/file/d/' + fid + '/view')
+    if item['mimeType'] in EXPORTS:
+        mime, extension, editor = EXPORTS[item['mimeType']]
+        target = item.get('exportLinks', {}).get(mime)
+        if not target:
+            target = 'https://docs.google.com/' + editor + '/d/' + fid + '/export?' + urlencode({'format': extension})
+    elif item['mimeType'].startswith('application/vnd.google-apps.'):
+        raise ValueError('이 Google 파일 형식은 다운로드를 지원하지 않습니다.')
+    else:
+        target = item.get('webContentLink') or ('https://drive.google.com/uc?' + urlencode({'export': 'download', 'id': fid}))
     return redirect(target, code=302)
 
 
