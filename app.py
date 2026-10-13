@@ -1,8 +1,14 @@
 """Google Drive board: Flask WSGI application for Vercel and local development."""
+import base64
+import hashlib
+import hmac
+import secrets
+import time
+from collections import deque
 import json
 import os
 import re
-from flask import Flask, Response, jsonify, redirect, request
+from flask import Flask, Response, jsonify, redirect, request, send_from_directory
 from urllib.error import URLError
 from werkzeug.exceptions import HTTPException
 from pathlib import Path
@@ -73,7 +79,7 @@ def api(path, params):
     headers = {}
     if ROOT_RESOURCE_KEY:
         headers['X-Goog-Drive-Resource-Keys'] = ROOT + '/' + ROOT_RESOURCE_KEY
-    with urlopen(Request('https://www.googleapis.com/drive/v3/' + path + '?' + urlencode(params), headers=headers), timeout=30) as response:
+    with urlopen(Request('https://www.googleapis.com/drive/v3/' + path + '?' + urlencode(params), headers=headers), timeout=10) as response:
         return json.load(response)
 
 def metadata(fid):
@@ -81,7 +87,7 @@ def metadata(fid):
         raise ValueError('잘못된 파일 주소입니다.')
     if not LIVE:
         if fid == ROOT:
-            return dict(id=ROOT, name='공유 자료실', mimeType=FOLDER)
+            return dict(id=ROOT, name='JW Studio', mimeType=FOLDER)
         return next((x for x in DEMO if x['id'] == fid), None)
     return api('files/' + fid, dict(fields='id,name,mimeType,parents,webContentLink,webViewLink,exportLinks,capabilities(canDownload)', supportsAllDrives='true'))
 
@@ -105,8 +111,8 @@ def within_root(fid, path=''):
             or len(set(ids)) != len(ids)
             or any(not re.fullmatch(r'[\w-]{1,200}', x) for x in ids)):
         raise ValueError('폴더 경로가 올바르지 않습니다. 자료실 첫 화면에서 다시 열어 주세요.')
-    trail = [dict(id=ROOT, name='자료실', path=ROOT)]
-    current = dict(id=ROOT, name='자료실', mimeType=FOLDER)
+    trail = [dict(id=ROOT, name='JW Studio', path=ROOT)]
+    current = dict(id=ROOT, name='JW Studio', mimeType=FOLDER)
     for index, child_id in enumerate(ids[1:], start=1):
         if current['mimeType'] != FOLDER:
             raise ValueError('폴더가 아닙니다.')
@@ -161,6 +167,95 @@ def files():
         item['canOpen'] = can_open(item)
         item['downloadFormat'] = EXPORTS.get(item['mimeType'], ('', '', ''))[1]
     return jsonify(files=items, breadcrumbs=trail, demo=not LIVE)
+
+
+# Cursors are signed; clients cannot substitute a folder outside the checked tree.
+SEARCH_SECRET = (KEY or secrets.token_hex(32)).encode()
+
+
+def encode_cursor(state):
+    payload = base64.urlsafe_b64encode(json.dumps(state, ensure_ascii=False).encode()).decode()
+    return payload + '.' + hmac.new(SEARCH_SECRET, payload.encode(), hashlib.sha256).hexdigest()
+
+
+def decode_cursor(token):
+    if not isinstance(token, str) or len(token) > 200000:
+        raise ValueError('검색 경로가 너무 큽니다. 하위 폴더에서 검색해 주세요.')
+    try:
+        payload, signature = token.rsplit('.', 1)
+        expected = hmac.new(SEARCH_SECRET, payload.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            raise ValueError()
+        state = json.loads(base64.urlsafe_b64decode(payload))
+        if time.time() - state['created'] > 900:
+            raise ValueError()
+        return state
+    except Exception:
+        raise ValueError('검색 정보가 만료되었거나 올바르지 않습니다. 다시 검색해 주세요.') from None
+
+
+@app.post('/api/search')
+def search():
+    data = request.get_json(silent=True) or {}
+    query = data.get('query', '')
+    if not isinstance(query, str) or not 1 <= len(query.strip()) <= 200:
+        raise ValueError('검색어를 1~200자로 입력하세요.')
+    query = query.strip().casefold()
+    cursor = data.get('cursor')
+    if cursor:
+        state = decode_cursor(cursor)
+        if state['query'] != query:
+            raise ValueError('검색어가 변경되었습니다. 다시 검색해 주세요.')
+    else:
+        path = data.get('path') or ROOT
+        if not isinstance(path, str):
+            raise ValueError('폴더 경로가 올바르지 않습니다.')
+        trail, folder = within_root(path.split('/')[-1], path)
+        if folder['mimeType'] != FOLDER:
+            raise ValueError('폴더가 아닙니다.')
+        state = dict(query=query, queue=[[path, ' / '.join(x['name'] for x in trail), '']], created=time.time())
+    queue = deque(state['queue'])
+    matches = []
+    for _ in range(4):
+        if not queue:
+            break
+        path, label, page_token = queue.popleft()
+        fid = path.split('/')[-1]
+        if LIVE:
+            params = dict(q=f"'{fid}' in parents and trashed = false", fields='nextPageToken,files(id,name,mimeType,size,capabilities(canDownload))', pageSize=100, orderBy='folder,name', supportsAllDrives='true', includeItemsFromAllDrives='true')
+            if page_token:
+                params['pageToken'] = page_token
+            result = api('files', params)
+            children = result.get('files', [])
+            if result.get('nextPageToken'):
+                queue.appendleft([path, label, result['nextPageToken']])
+        else:
+            children = list_children(fid)
+        for original in children:
+            item = dict(original)
+            item['path'] = path + '/' + item['id']
+            item['location'] = label
+            item['canOpen'] = can_open(item)
+            item['downloadFormat'] = EXPORTS.get(item['mimeType'], ('', '', ''))[1]
+            if query in item['name'].casefold():
+                matches.append(item)
+            if item['mimeType'] == FOLDER and item['id'] not in path.split('/'):
+                if len(path.split('/')) >= 99:
+                    raise ValueError('폴더가 너무 깊습니다. 하위 폴더에서 검색해 주세요.')
+                queue.append([item['path'], label + ' / ' + item['name'], ''])
+    state['queue'] = list(queue)
+    token = encode_cursor(state) if queue else None
+    if token and len(token) > 200000:
+        raise ValueError('검색 범위가 너무 큽니다. 하위 폴더에서 검색해 주세요.')
+    return jsonify(files=matches, cursor=token, complete=not queue)
+
+
+# Vercel serves public/ directly; these routes also support local Flask preview.
+@app.get('/<asset>')
+def brand_asset(asset):
+    if asset not in ('jw-studio-logo.png', 'jw-studio-symbol.png', 'favicon-32x32.png'):
+        return jsonify(error='페이지를 찾을 수 없습니다.'), 404
+    return send_from_directory(Path(__file__).with_name('public'), asset)
 
 
 @app.get('/open')
