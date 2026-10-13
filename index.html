@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JW Studio</title><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<script>try{document.documentElement.dataset.theme=localStorage.getItem('jw-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch{document.documentElement.dataset.theme='light'}</script><script src="/fflate.min.js" defer></script>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('jw-theme')||'dark'}catch{document.documentElement.dataset.theme='dark'}</script><script src="/fflate.min.js" defer></script>
 <style>
 :root{--green:#3ecf8e;--green-deep:#24b47e;--ink:#171717;--muted:#707070;--line:#dfdfdf;--soft:#fafafa}
 *{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font:16px/1.5 Inter,'Segoe UI','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;-webkit-font-smoothing:antialiased}button,input,a{-webkit-tap-highlight-color:transparent}a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--green-deep);outline-offset:3px}
@@ -18,20 +18,27 @@ table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{text-align:le
 html[data-theme=dark]{color-scheme:dark;--ink:#ededed;--muted:#a3a3a3;--line:#383838;--soft:#252525}html[data-theme=dark] body,html[data-theme=dark] .panel{background:#1c1c1c}html[data-theme=dark] .topbar,html[data-theme=dark] .footer-inner,html[data-theme=dark] td,html[data-theme=dark] #status,html[data-theme=dark] tbody tr{border-color:var(--line)}html[data-theme=dark] tbody tr:hover{background:#242424}html[data-theme=dark] input:focus{background:#202020}html[data-theme=dark] .action{background:#252525;color:var(--ink);border-color:#454545}html[data-theme=dark] .action:hover{background:#333}html[data-theme=dark] .action-download{background:#203d30;border-color:#316d4f}html[data-theme=dark] .action-download:hover{background:var(--green);color:#171717}html[data-theme=dark] .action:disabled{background:#252525;color:#777;border-color:#383838}html[data-theme=dark] .brand-logo,html[data-theme=dark] .footer-symbol{filter:brightness(0) invert(1)}
 @media(max-width:767px){.top-caption{display:none}.selection-bar{padding:14px 16px;gap:10px}.selection-bar .action{font-size:12px;padding:8px 10px}.file-size{padding-left:72px}.top-controls{gap:8px}.brand-logo{width:145px}}
 @media(max-width:359px){.file-size{padding-left:0}.selection-bar{gap:8px}}
+
+select{font:inherit;font-size:13px;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px;min-height:40px;max-width:100%}.view-switch{display:flex;gap:6px;margin-left:auto}.view-switch [aria-pressed=true]{background:var(--green)!important;color:#171717!important;border-color:var(--green-deep)!important}mark{color:inherit;background:#3ecf8e40;border-radius:3px;padding:0 1px}.location-button{border:0!important;padding:3px 0!important;background:transparent!important;color:var(--muted)!important;font-size:12px!important;text-align:left;text-decoration:underline;text-underline-offset:3px}.file-location{font-weight:400}.selection-bar #selection-summary{flex-basis:100%;color:var(--muted)}.download-progress{width:100%;align-items:center;gap:12px;flex-wrap:wrap}.download-progress:not([hidden]){display:flex}.download-progress progress{width:min(240px,100%);height:8px;accent-color:var(--green)}.download-progress #zip-status{flex:1;min-width:180px}.download-progress #cancel-download{min-height:40px}.panel[data-view=card] table,.panel[data-view=card] tbody{display:block}.panel[data-view=card] thead{display:none}.panel[data-view=card] tbody{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;padding:20px}.panel[data-view=card] tbody tr{display:flex;flex-direction:column;gap:12px;min-width:0;padding:20px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}.panel[data-view=card] td{display:block;border:0;padding:0;width:100%;min-width:0}.panel[data-view=card] .file-name{align-items:flex-start}.panel[data-view=card] .file-title{flex:1}.panel[data-view=card] .file-actions{margin-top:auto}.panel[data-view=card] .actions{justify-content:flex-start}.panel[data-view=card] .file-size{padding-left:0}.panel[data-view=card] .file-icon{width:32px;height:39px}
+@media(max-width:767px){.view-switch{margin-left:0}.panel[data-view=card] tbody{padding:16px;gap:12px}.panel[data-view=card] tbody tr{padding:16px}.download-progress progress{width:100%}}
+
+.search-tools{display:flex;align-items:center;gap:10px;flex:0 1 490px;min-width:0}.search-tools .search-box{width:auto;flex:1;min-width:0}.type-filter-label{flex:0 0 138px;min-width:0}.type-filter-label select{width:100%;min-height:44px}.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}.column-sort{display:inline-flex;gap:4px;align-items:center;color:var(--muted);font:inherit;font-weight:500;background:transparent;border:0;padding:8px 0;cursor:pointer;text-align:left}.column-sort:hover{color:var(--ink)}th[aria-sort=ascending] .column-sort,th[aria-sort=descending] .column-sort{color:var(--ink)}
+.panel[data-view=card] thead{display:block;padding:8px 20px;border-bottom:1px solid var(--line);background:var(--soft)}.panel[data-view=card] thead tr{display:flex;gap:24px}.panel[data-view=card] thead th{display:block;width:auto;padding:0}.panel[data-view=card] thead th:last-child{display:none}
+@media(max-width:767px){.search-tools{flex:none;width:100%}.type-filter-label{flex-basis:118px}.type-filter-label select{font-size:14px}.panel thead{position:static;display:block;width:auto;height:auto;clip:auto;overflow:visible;white-space:normal;padding:8px 16px;background:var(--soft);border-bottom:1px solid var(--line)}.panel thead tr{display:flex;gap:24px}.panel thead th{display:block;width:auto;padding:0}.panel thead th:last-child{display:none}.column-sort{min-height:44px}.selection-bar .view-switch{margin-left:auto}}
 </style>
 <main>
 <div class="topbar"><a class="brand" href="/" aria-label="JW Studio 첫 화면"><img class="brand-logo" src="/jw-studio-logo.png" alt="JW Studio" width="2079" height="756"></a><div class="top-controls"><span class="top-caption">JW STUDIO LIBRARY</span><button id="theme-toggle" class="action" type="button" aria-label="다크모드 전환">다크모드</button></div></div>
 <header><span class="label">YOUR FILES, IN ONE PLACE</span><h1>필요한 자료를 한곳에서.</h1><p>폴더를 둘러보고, 문서를 열고, 필요한 파일을 내려받으세요.</p></header>
 <div id="notice" class="notice" hidden>예시 자료가 표시되고 있습니다.</div>
-<section class="panel" aria-label="공유 파일 목록">
-<div class="toolbar"><nav id="crumbs" aria-label="폴더 경로"></nav><div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="search" type="search" placeholder="하위 폴더까지 검색" aria-label="현재 및 하위 폴더에서 파일명 검색"></div></div>
-<div class="selection-bar"><label class="select-all"><input id="select-all" type="checkbox"> 전체 선택</label><span id="selected-count" role="status">0개 선택</span><button id="clear-selection" class="action" type="button">선택 해제</button><button id="download-selected" class="action action-download" type="button" disabled>선택 다운로드</button><span id="zip-status" role="status" aria-live="polite"></span></div><div class="scroll"><table><thead><tr><th scope="col">파일 / 폴더명</th><th scope="col">크기</th><th scope="col">열기 / 다운로드</th></tr></thead><tbody id="rows"></tbody></table></div>
+<section id="library-panel" class="panel" aria-label="공유 파일 목록">
+<div class="toolbar"><nav id="crumbs" aria-label="폴더 경로"></nav><div class="search-tools"><div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="search" type="search" placeholder="하위 폴더까지 검색" aria-label="현재 및 하위 폴더에서 파일명 검색"></div><label class="type-filter-label"><span class="sr-only">파일 유형</span><select id="type-filter"><option value="all">전체</option><option value="folder">폴더</option><option value="document">문서</option><option value="sheet">시트</option><option value="slide">슬라이드</option><option value="pdf">PDF</option><option value="image">이미지</option><option value="archive">압축파일</option><option value="media">오디오 / 동영상</option><option value="other">기타</option></select></label></div></div>
+<div class="selection-bar"><label class="select-all"><input id="select-all" type="checkbox"> 전체 선택</label><span id="selected-count" role="status">0개 선택</span><button id="clear-selection" class="action" type="button">선택 해제</button><button id="download-selected" class="action action-download" type="button" disabled>선택 다운로드</button><div class="view-switch" role="group" aria-label="보기 방식"><button id="view-list" type="button" class="action" aria-pressed="true">목록</button><button id="view-card" type="button" class="action" aria-pressed="false">카드</button></div><span id="selection-summary"></span><div class="download-progress" id="download-progress" hidden><progress id="zip-progress" max="100" value="0" aria-label="ZIP 다운로드 진행률"></progress><span id="zip-status" role="status" aria-live="polite"></span><button id="cancel-download" class="action" type="button" hidden>취소</button></div></div><div class="scroll"><table><thead><tr><th id="name-column" scope="col" aria-sort="ascending"><button id="sort-name" class="column-sort" type="button">파일 / 폴더명<span id="name-order" aria-hidden="true"> ↑</span></button></th><th id="size-column" scope="col" aria-sort="none"><button id="sort-size" class="column-sort" type="button">크기<span id="size-order" aria-hidden="true"></span></button></th><th scope="col">열기 / 다운로드</th></tr></thead><tbody id="rows"></tbody></table></div>
 <div id="status" role="status" aria-live="polite"></div></section>
 <footer class="footer"><div class="footer-inner"><span class="footer-name"><img class="footer-symbol" src="/jw-studio-symbol.png" alt="" width="1254" height="1254"> © <span id="year"></span> JW Studio</span><span>자료의 저작권은 각 권리자에게 있습니다.</span></div></footer>
 </main>
 <script>
 document.getElementById('year').textContent=new Date().getFullYear();
-const selected=new Map();let zipBusy=false;
+const selected=new Map();let zipBusy=false, zipController=null;let sortMode='name-asc';let viewMode='list';try{viewMode=localStorage.getItem('jw-view')||'list'}catch{}
 let files=[], folderFiles=[], currentPath='', sequence=0, searchTimer, searchController;const $=id=>document.getElementById(id), folderType='application/vnd.google-apps.folder';
 function button(text, action){const el=document.createElement('button');el.textContent=text;el.onclick=action;return el}
 function fileType(f){
@@ -60,51 +67,100 @@ function fileIcon(f){
  return svg;
 }
 function actionLink(label,route,f){const a=document.createElement('a');a.className=route==='/download'?'action action-download':'action';a.textContent=label;a.href=route+'?id='+encodeURIComponent(f.id)+'&path='+encodeURIComponent(f.path);return a}
+function fileGroup(f){
+ const mime=f.mimeType||'',ext=f.name.split('.').pop().toLowerCase();if(mime===folderType)return 'folder';
+ if(mime==='application/pdf'||ext==='pdf')return 'pdf';
+ if(mime==='application/vnd.google-apps.document'||['doc','docx','odt','txt','rtf'].includes(ext))return 'document';
+ if(mime==='application/vnd.google-apps.spreadsheet'||['xls','xlsx','ods','csv'].includes(ext))return 'sheet';
+ if(mime==='application/vnd.google-apps.presentation'||['ppt','pptx','odp'].includes(ext))return 'slide';
+ if(mime.startsWith('image/'))return 'image';if(['zip','rar','7z','tar','gz'].includes(ext))return 'archive';if(mime.startsWith('audio/')||mime.startsWith('video/'))return 'media';return 'other';
+}
+function visibleFiles(){
+ const filter=$('type-filter').value||'all',sort=sortMode;
+ return files.filter(f=>filter==='all'||fileGroup(f)===filter).slice().sort((a,b)=>{
+  if((a.mimeType===folderType)!==(b.mimeType===folderType))return a.mimeType===folderType?-1:1;
+  if(sort.startsWith('size')){if(a.size==null||b.size==null){if(a.size==null&&b.size!=null)return 1;if(b.size==null&&a.size!=null)return -1}else{const diff=Number(a.size)-Number(b.size);if(diff)return sort==='size-desc'?-diff:diff}}
+  const diff=a.name.localeCompare(b.name,'ko',{numeric:true,sensitivity:'base'});return sort==='name-desc'?-diff:diff;
+ });
+}
+function highlighted(text){
+ const span=document.createElement('span'),query=$('search').value.trim();if(!query){span.textContent=text;return span}
+ const lower=text.toLocaleLowerCase(),needle=query.toLocaleLowerCase();let offset=0,index;
+ while((index=lower.indexOf(needle,offset))!==-1){span.append(document.createTextNode(text.slice(offset,index)));const mark=document.createElement('mark');mark.textContent=text.slice(index,index+query.length);span.append(mark);offset=index+query.length}span.append(document.createTextNode(text.slice(offset)));return span;
+}
+function setView(mode){viewMode=mode==='card'?'card':'list';$('library-panel').dataset.view=viewMode;$('view-list').setAttribute('aria-pressed',String(viewMode==='list'));$('view-card').setAttribute('aria-pressed',String(viewMode==='card'));try{localStorage.setItem('jw-view',viewMode)}catch{}}
+function updateSort(){
+ const nameActive=sortMode.startsWith('name'),ascending=sortMode.endsWith('asc');
+ $('name-column').setAttribute('aria-sort',nameActive?(ascending?'ascending':'descending'):'none');$('size-column').setAttribute('aria-sort',!nameActive?(ascending?'ascending':'descending'):'none');
+ $('name-order').textContent=nameActive?(ascending?' ↑':' ↓'):'';$('size-order').textContent=!nameActive?(ascending?' ↑':' ↓'):'';
+ $('sort-name').setAttribute('aria-label','이름 정렬: '+(nameActive&&ascending?'내림차순으로 변경':'오름차순으로 변경'));$('sort-size').setAttribute('aria-label','크기 정렬: '+(!nameActive&&!ascending?'작은 파일 먼저':'큰 파일 먼저'));
+}
+$('sort-name').onclick=()=>{sortMode=sortMode==='name-asc'?'name-desc':'name-asc';updateSort();render()};$('sort-size').onclick=()=>{sortMode=sortMode==='size-desc'?'size-asc':'size-desc';updateSort();render()};updateSort();
+$('type-filter').onchange=render;$('view-list').onclick=()=>setView('list');$('view-card').onclick=()=>setView('card');setView(viewMode);
 function render(){
- const list=files;$('rows').replaceChildren();
+ const list=visibleFiles();$('rows').replaceChildren();
  for(const f of list){
   const tr=document.createElement('tr'),name=document.createElement('td'),isFolder=f.mimeType===folderType,wrap=document.createElement('div');wrap.className='file-name';const hit=document.createElement('label');hit.className='check-hit';const check=document.createElement('input');check.type='checkbox';check.className='file-check';check.checked=selected.has(f.path);check.disabled=f.mimeType!==folderType&&f.capabilities?.canDownload===false;check.setAttribute('aria-label',f.name+' 선택');check.onchange=()=>{if(check.checked)selected.set(f.path,f);else selected.delete(f.path);updateSelection()};hit.append(check);wrap.append(hit,fileIcon(f));
-  const title=document.createElement('span');title.className='file-title';title.append(isFolder?button(f.name,()=>navigate(f.path)):document.createTextNode(f.name));if(f.location){const location=document.createElement('span');location.className='file-location';location.textContent=f.location;title.append(location)}wrap.append(title);name.append(wrap);tr.append(name);
+  const title=document.createElement('span');title.className='file-title';if(isFolder){const folderButton=button('',()=>navigate(f.path));folderButton.append(highlighted(f.name));title.append(folderButton)}else title.append(highlighted(f.name));if(f.location){const location=button('',()=>navigate(f.path.split('/').slice(0,-1).join('/')));location.className='file-location location-button';location.textContent=f.location+' · 위치로 이동';location.setAttribute('aria-label',f.name+'의 폴더로 이동');title.append(location)}wrap.append(title);name.append(wrap);tr.append(name);
   const sizeCell=document.createElement('td');sizeCell.className='file-size';sizeCell.textContent=f.size?size(Number(f.size)):'—';tr.append(sizeCell);
   const actions=document.createElement('td'),group=document.createElement('div');group.className='actions';actions.className='file-actions';
   if(f.mimeType!==folderType&&f.capabilities?.canDownload===false){const disabled=document.createElement('button');disabled.className='action';disabled.textContent='다운로드 제한';disabled.disabled=true;group.append(disabled)}
   else if(isFolder){const download=button('다운로드',()=>downloadZip([f]));download.className='action action-download';group.append(download)}
-  else {const a=actionLink('다운로드','/download',f);if(f.downloadFormat)a.title=f.downloadFormat.toUpperCase()+' 파일로 다운로드';group.append(a)}
+  else {const a=Number(f.size||0)>256*1024*1024?actionLink('다운로드','/download',f):button('다운로드',()=>downloadSingle(f));a.className='action action-download';if(Number(f.size||0)>256*1024*1024)a.title='대용량 파일은 Google Drive에서 직접 다운로드합니다.';if(f.downloadFormat)a.title=f.downloadFormat.toUpperCase()+' 파일로 다운로드';group.append(a)}
   if(!isFolder&&f.canOpen){const open=actionLink('바로열기','/open',f);open.target='_blank';open.rel='noopener';group.append(open)}
   actions.append(group);tr.append(actions);$('rows').append(tr);
  }
  updateSelection();
- $('status').textContent=list.length?`${list.length}개의 자료`:'표시할 자료가 없습니다.';
+ $('status').textContent=list.length?`${list.length}개의 자료${list.length!==files.length?' / 전체 '+files.length+'개':''}`:'표시할 자료가 없습니다.';
 }
 function updateSelection(){
+ const roots=[...selected.values()].filter(f=>![...selected.keys()].some(p=>p!==f.path&&f.path.startsWith(p+'/'))),folders=roots.filter(f=>f.mimeType===folderType).length,unknown=roots.filter(f=>f.mimeType!==folderType&&f.size==null).length,known=roots.reduce((n,f)=>n+(f.mimeType!==folderType?Number(f.size||0):0),0);
+ $('selection-summary').textContent=selected.size?`파일 ${roots.length-folders}개 · 폴더 ${folders}개 · 확인된 용량 ${size(known)}${folders||unknown?' + 크기 미확인 항목':''}${roots.length!==selected.size?' · 폴더 내부 중복 제외':''}`:'파일이나 폴더를 선택해 ZIP으로 내려받으세요.';
  $('selected-count').textContent=selected.size+'개 선택';$('download-selected').disabled=zipBusy||!selected.size;
- const eligible=files.filter(f=>f.mimeType===folderType||f.capabilities?.canDownload!==false),checked=eligible.filter(f=>selected.has(f.path)).length;
+ const eligible=visibleFiles().filter(f=>f.mimeType===folderType||f.capabilities?.canDownload!==false),checked=eligible.filter(f=>selected.has(f.path)).length;
  $('select-all').checked=eligible.length>0&&checked===eligible.length;$('select-all').indeterminate=checked>0&&checked<eligible.length;
 }
-$('select-all').onchange=()=>{for(const f of files){if(f.mimeType!==folderType&&f.capabilities?.canDownload===false)continue;if($('select-all').checked)selected.set(f.path,f);else selected.delete(f.path)}render()};
+$('select-all').onchange=()=>{for(const f of visibleFiles()){if(f.mimeType!==folderType&&f.capabilities?.canDownload===false)continue;if($('select-all').checked)selected.set(f.path,f);else selected.delete(f.path)}render()};
 $('clear-selection').onclick=()=>{selected.clear();render()};
 $('download-selected').onclick=()=>downloadZip([...selected.values()]);
 function themeLabel(){const dark=document.documentElement.dataset.theme==='dark';$('theme-toggle').textContent=dark?'일반모드':'다크모드';$('theme-toggle').setAttribute('aria-label',dark?'일반모드로 전환':'다크모드로 전환');$('theme-toggle').setAttribute('aria-pressed',String(dark))}
 $('theme-toggle').onclick=()=>{const theme=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=theme;try{localStorage.setItem('jw-theme',theme)}catch{}themeLabel()};themeLabel();
-async function archiveRequest(route,body){const response=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!response.ok){const error=await response.json().catch(()=>({error:'다운로드에 실패했습니다.'}));throw Error(error.error)}return response}
+function cancelled(){const error=Error('다운로드를 취소했습니다.');error.name='AbortError';return error}
+function checkCancelled(signal){if(signal.aborted)throw cancelled()}
+function zipProgress(text,value){$('download-progress').hidden=false;$('zip-status').textContent=text;if(value==null)$('zip-progress').removeAttribute('value');else $('zip-progress').value=value}
+$('cancel-download').onclick=()=>{if(zipController){zipController.abort();$('cancel-download').disabled=true;zipProgress('다운로드를 취소하는 중…',null)}};
+async function archiveRequest(route,body,signal){checkCancelled(signal);const response=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal});if(!response.ok){const error=await response.json().catch(()=>({error:'다운로드에 실패했습니다.'}));throw Error(error.error)}return response}
+function saveDownload(bytes,filename,type='application/octet-stream'){const url=URL.createObjectURL(new Blob([bytes],{type})),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}
+async function downloadSingle(file){
+ if(zipBusy)return;zipBusy=true;zipController=new AbortController();const signal=zipController.signal;updateSelection();$('cancel-download').hidden=false;$('cancel-download').disabled=false;zipProgress('파일 확인 중…',null);
+ try{
+  const manifest=await (await archiveRequest('/api/archive/manifest',{items:[{path:file.path}]},signal)).json();checkCancelled(signal);
+  const entry=manifest.entries.find(e=>!e.directory);if(!entry)throw Error('파일을 찾을 수 없습니다.');const expected=Number(entry.size||0);if(expected>256*1024*1024)throw Error('진행률 다운로드는 256MB까지 지원합니다. 원본 Google Drive에서 다운로드해 주세요.');
+  const response=await archiveRequest('/api/archive/file',{token:entry.token},signal),reader=response.body.getReader(),chunks=[];let length=0;
+  try{while(true){checkCancelled(signal);const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>256*1024*1024)throw Error('진행률 다운로드는 256MB까지 지원합니다.');chunks.push(value);zipProgress(file.name+' · 수신 '+size(length)+(expected?' / '+size(expected):''),expected?Math.min(100,length/expected*100):null)}}catch(error){await reader.cancel().catch(()=>{});throw error}
+  const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length}checkCancelled(signal);saveDownload(bytes,entry.name);zipProgress('파일 수신 완료 · 브라우저 다운로드를 시작했습니다.',100);
+ }catch(error){zipProgress(error.name==='AbortError'?'다운로드를 취소했습니다.':error.message,0)}finally{zipBusy=false;zipController=null;$('cancel-download').hidden=true;updateSelection()}
+}
 async function downloadZip(items){
- if(zipBusy)return;if(!items.length)return;zipBusy=true;updateSelection();$('zip-status').textContent='폴더와 파일을 확인하는 중…';
+ if(zipBusy||!items.length)return;zipBusy=true;zipController=new AbortController();const signal=zipController.signal;updateSelection();$('cancel-download').hidden=false;$('cancel-download').disabled=false;zipProgress('폴더와 파일을 확인하는 중…',null);
  try{
   if(!window.fflate)throw Error('압축 도구를 불러오지 못했습니다. 새로고침 후 다시 시도하세요.');
-  let cursor=null,entries=[],filename;do{const response=await archiveRequest('/api/archive/manifest',cursor?{cursor}:{items:items.map(f=>({path:f.path}))});const data=await response.json();entries.push(...data.entries);filename=data.filename;cursor=data.cursor;$('zip-status').textContent=entries.length+'개 항목 확인 중…'}while(cursor);
-  const archive=Object.create(null),used=new Set();let total=0,index=0;
+  let cursor=null,entries=[],filename;do{const response=await archiveRequest('/api/archive/manifest',cursor?{cursor}:{items:items.map(f=>({path:f.path}))},signal);const data=await response.json();checkCancelled(signal);entries.push(...data.entries);filename=data.filename;cursor=data.cursor;zipProgress(entries.length+'개 항목 확인 중…',null)}while(cursor);
+  const archive=Object.create(null),used=new Set(),fileEntries=entries.filter(e=>!e.directory);let total=0,index=0;
+  const expected=fileEntries.reduce((sum,e)=>sum+Number(e.size||0),0),known=fileEntries.every(e=>e.size!=null);
+  if(expected>256*1024*1024)throw Error('선택 용량이 256MB를 초과합니다. 나누어 선택해 주세요.');
   for(const entry of entries){
-   let name=entry.name;let n=2;while(used.has(name)){const directory=name.endsWith('/');name=entry.name.replace(/\/$/,'')+' ('+(n++)+')'+(directory?'/':'')}used.add(name);
+   checkCancelled(signal);let name=entry.name,n=2;while(used.has(name)){const directory=name.endsWith('/');name=entry.name.replace(/\/$/,'')+' ('+(n++)+')'+(directory?'/':'')}used.add(name);
    if(entry.directory){archive[name]=new Uint8Array();continue}
-   $('zip-status').textContent=`파일을 받는 중 ${++index} / ${entries.filter(e=>!e.directory).length}`;
-   const response=await archiveRequest('/api/archive/file',{token:entry.token});const reader=response.body.getReader();const chunks=[];let length=0;
-   while(true){const {done,value}=await reader.read();if(done)break;total+=value.length;length+=value.length;if(total>256*1024*1024){await reader.cancel();throw Error('브라우저 메모리를 위해 한번에 256MB까지 지원합니다. 나누어 선택해 주세요.')}chunks.push(value)}
+   index++;zipProgress(`파일 ${index}/${fileEntries.length} · ${entry.name} · 수신 ${size(total)}`,known&&expected?Math.min(100,total/expected*100):null);
+   const response=await archiveRequest('/api/archive/file',{token:entry.token},signal),reader=response.body.getReader(),chunks=[];let length=0;
+   try{while(true){checkCancelled(signal);const {done,value}=await reader.read();if(done)break;total+=value.length;length+=value.length;if(total>256*1024*1024)throw Error('원본 합계 256MB까지 지원합니다. 나누어 선택해 주세요.');chunks.push(value);zipProgress(`파일 ${index}/${fileEntries.length} · ${entry.name} · 수신 ${size(total)}${known?' / '+size(expected):''}`,known&&expected?Math.min(100,total/expected*100):null)}}catch(error){await reader.cancel().catch(()=>{});throw error}
    const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length}archive[name]=bytes;
   }
-  $('zip-status').textContent='ZIP으로 압축하는 중…';
-  const zip=await new Promise((resolve,reject)=>window.fflate.zip(archive,{level:6},(error,data)=>error?reject(error):resolve(data)));
-  const url=URL.createObjectURL(new Blob([zip],{type:'application/zip'}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);$('zip-status').textContent='ZIP 다운로드를 시작했습니다.';
- }catch(error){$('zip-status').textContent=error.message}finally{zipBusy=false;updateSelection()}
+  checkCancelled(signal);zipProgress('파일 수신 완료 · ZIP으로 압축하는 중…',null);
+  const zip=await new Promise((resolve,reject)=>{let terminate;const abort=()=>{if(terminate)terminate();reject(cancelled())};signal.addEventListener('abort',abort,{once:true});terminate=window.fflate.zip(archive,{level:6},(error,data)=>{signal.removeEventListener('abort',abort);if(signal.aborted)reject(cancelled());else if(error)reject(error);else resolve(data)});if(signal.aborted)abort()});
+  checkCancelled(signal);const url=URL.createObjectURL(new Blob([zip],{type:'application/zip'})),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);zipProgress('ZIP 생성 완료 · 브라우저 다운로드를 시작했습니다.',100);
+ }catch(error){zipProgress(error.name==='AbortError'?'다운로드를 취소했습니다.':error.message,0)}finally{zipBusy=false;zipController=null;$('cancel-download').hidden=true;updateSelection()}
 }
 function size(n){const units=['B','KB','MB','GB','TB'];let i=0;while(n>=1024&&i<4){n/=1024;i++}return n.toFixed(i?1:0)+' '+units[i]}
 async function load(path=''){clearTimeout(searchTimer);searchController?.abort();currentPath=path;const id=path?path.split('/').at(-1):'';const seq=++sequence;files=[];$('rows').replaceChildren();$('status').textContent='자료를 불러오는 중…';$('search').disabled=true;try{const r=await fetch('/api/files?folder='+encodeURIComponent(id||'')+'&path='+encodeURIComponent(path));const data=await r.json();if(seq!==sequence)return;if(!r.ok)throw Error(data.error);files=data.files;folderFiles=data.files;currentPath=data.breadcrumbs.at(-1).path;$('notice').hidden=!data.demo;$('search').value='';$('crumbs').replaceChildren();for(const [i,c] of data.breadcrumbs.entries()){if(i)$('crumbs').append(' / ');$('crumbs').append(button(c.name,()=>navigate(c.path)))}render()}catch(e){if(seq===sequence)$('status').textContent=e.message}finally{if(seq===sequence)$('search').disabled=false}}
