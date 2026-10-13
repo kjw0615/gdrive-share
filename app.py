@@ -4,11 +4,12 @@ import hashlib
 import hmac
 import secrets
 import time
+from datetime import datetime, timezone, timedelta
 from collections import deque
 import json
 import os
 import re
-from flask import Flask, Response, jsonify, redirect, request, send_from_directory
+from flask import Flask, Response, jsonify, redirect, request, send_from_directory, stream_with_context, g, has_request_context
 from urllib.error import URLError
 from werkzeug.exceptions import HTTPException
 from pathlib import Path
@@ -87,11 +88,20 @@ def metadata(fid):
         raise ValueError('잘못된 파일 주소입니다.')
     if not LIVE:
         if fid == ROOT:
-            return dict(id=ROOT, name='JW Studio', mimeType=FOLDER)
+            return dict(id=ROOT, name='자료실', mimeType=FOLDER)
         return next((x for x in DEMO if x['id'] == fid), None)
     return api('files/' + fid, dict(fields='id,name,mimeType,parents,webContentLink,webViewLink,exportLinks,capabilities(canDownload)', supportsAllDrives='true'))
 
 def list_children(fid):
+    if has_request_context():
+        cache = g.setdefault('folder_cache', {})
+        if fid not in cache:
+            cache[fid] = fetch_children(fid)
+        return [dict(item) for item in cache[fid]]
+    return fetch_children(fid)
+
+
+def fetch_children(fid):
     if not LIVE:
         return [dict(x) for x in DEMO if fid in x['parents']]
     params = dict(q=f"'{fid}' in parents and trashed = false", fields='nextPageToken,files(id,name,mimeType,size,capabilities(canDownload))', pageSize=100, orderBy='folder,name', supportsAllDrives='true', includeItemsFromAllDrives='true')
@@ -111,8 +121,8 @@ def within_root(fid, path=''):
             or len(set(ids)) != len(ids)
             or any(not re.fullmatch(r'[\w-]{1,200}', x) for x in ids)):
         raise ValueError('폴더 경로가 올바르지 않습니다. 자료실 첫 화면에서 다시 열어 주세요.')
-    trail = [dict(id=ROOT, name='JW Studio', path=ROOT)]
-    current = dict(id=ROOT, name='JW Studio', mimeType=FOLDER)
+    trail = [dict(id=ROOT, name='자료실', path=ROOT)]
+    current = dict(id=ROOT, name='자료실', mimeType=FOLDER)
     for index, child_id in enumerate(ids[1:], start=1):
         if current['mimeType'] != FOLDER:
             raise ValueError('폴더가 아닙니다.')
@@ -204,7 +214,7 @@ def search():
     cursor = data.get('cursor')
     if cursor:
         state = decode_cursor(cursor)
-        if state['query'] != query:
+        if state.get('kind') != 'search' or state.get('query') != query:
             raise ValueError('검색어가 변경되었습니다. 다시 검색해 주세요.')
     else:
         path = data.get('path') or ROOT
@@ -213,7 +223,7 @@ def search():
         trail, folder = within_root(path.split('/')[-1], path)
         if folder['mimeType'] != FOLDER:
             raise ValueError('폴더가 아닙니다.')
-        state = dict(query=query, queue=[[path, ' / '.join(x['name'] for x in trail), '']], created=time.time())
+        state = dict(kind='search', query=query, queue=[[path, ' / '.join(x['name'] for x in trail), '']], created=time.time())
     queue = deque(state['queue'])
     matches = []
     for _ in range(4):
@@ -253,9 +263,128 @@ def search():
 # Vercel serves public/ directly; these routes also support local Flask preview.
 @app.get('/<asset>')
 def brand_asset(asset):
-    if asset not in ('jw-studio-logo.png', 'jw-studio-symbol.png', 'favicon-32x32.png'):
+    if asset not in ('jw-studio-logo.png', 'jw-studio-symbol.png', 'favicon-32x32.png', 'fflate.min.js', 'fflate-LICENSE.txt'):
         return jsonify(error='페이지를 찾을 수 없습니다.'), 404
     return send_from_directory(Path(__file__).with_name('public'), asset)
+
+
+def zip_name(name):
+    name = re.sub(r'[\x00-\x1f<>:"/\\|?*]', '_', name).strip(' .')
+    return name[:180] or 'untitled'
+
+
+def archive_entry(item, path, zip_path):
+    if item.get('capabilities', {}).get('canDownload') is False:
+        raise ValueError(item['name'] + ': 다운로드가 제한되어 있습니다.')
+    if item['mimeType'].startswith('application/vnd.google-apps.') and item['mimeType'] not in EXPORTS:
+        raise ValueError(item['name'] + ': ZIP에 포함할 수 없는 파일 형식입니다.')
+    if item['mimeType'] in EXPORTS:
+        extension = '.' + EXPORTS[item['mimeType']][1]
+        if not zip_path.lower().endswith(extension):
+            zip_path += extension
+    return dict(name=zip_path, size=item.get('size'), token=encode_cursor(dict(
+        kind='archive-file', root=ROOT, path=path, created=time.time())))
+
+
+@app.post('/api/archive/manifest')
+def archive_manifest():
+    data = request.get_json(silent=True) or {}
+    cursor = data.get('cursor')
+    entries = []
+    if cursor:
+        state = decode_cursor(cursor)
+        if state.get('kind') != 'archive' or state.get('root') != ROOT:
+            raise ValueError('ZIP 요청이 올바르지 않습니다.')
+    else:
+        selection = data.get('items')
+        if not isinstance(selection, list) or not 1 <= len(selection) <= 500:
+            raise ValueError('파일 또는 폴더를 1~500개 선택하세요.')
+        paths = []
+        for chosen in selection:
+            if not isinstance(chosen, dict) or not isinstance(chosen.get('path'), str):
+                raise ValueError('선택 항목이 올바르지 않습니다.')
+            if chosen['path'] not in paths:
+                paths.append(chosen['path'])
+        # A selected parent already includes its descendants.
+        paths = [path for path in paths if not any(path.startswith(other + '/') for other in paths if other != path)]
+        queue, used = [], set()
+        filename = 'JWStudio_' + datetime.now(timezone(timedelta(hours=9))).strftime('%Y%m%d_%H%M%S') + '_' + secrets.token_hex(4) + '.zip'
+        for path in paths:
+            _, item = within_root(path.split('/')[-1], path)
+            name = zip_name(item['name'])
+            if len(paths) == 1 and item['mimeType'] == FOLDER:
+                filename = name + '.zip'
+            unique, number = name, 2
+            while unique in used:
+                unique = name + ' (' + str(number) + ')'; number += 1
+            used.add(unique)
+            if item['mimeType'] == FOLDER:
+                entries.append(dict(name=unique + '/', directory=True))
+                queue.append([path, unique, ''])
+            else:
+                entries.append(archive_entry(item, path, unique))
+        state = dict(kind='archive', root=ROOT, filename=filename, queue=queue, created=time.time(), used=[])
+    queue = deque(state['queue'])
+    used = set(state.get('used', []))
+    for _ in range(4):
+        if not queue: break
+        path, prefix, page = queue.popleft()
+        if LIVE:
+            params = dict(q=f"'{path.split('/')[-1]}' in parents and trashed = false", fields='nextPageToken,files(id,name,mimeType,size,capabilities(canDownload))', pageSize=100, orderBy='folder,name', supportsAllDrives='true', includeItemsFromAllDrives='true')
+            if page: params['pageToken'] = page
+            result = api('files', params)
+            children = result.get('files', [])
+            if result.get('nextPageToken'): queue.appendleft([path, prefix, result['nextPageToken']])
+        else:
+            children = list_children(path.split('/')[-1])
+        for item in children:
+            if item['id'] in path.split('/'): continue
+            child_path = path + '/' + item['id']
+            name = prefix + '/' + zip_name(item['name'])
+            unique, number = name, 2
+            while unique in used:
+                unique = name + ' (' + str(number) + ')'; number += 1
+            used.add(unique)
+            if item['mimeType'] == FOLDER:
+                if len(child_path.split('/')) > 100: raise ValueError('폴더가 너무 깊습니다.')
+                entries.append(dict(name=unique + '/', directory=True))
+                queue.append([child_path, unique, ''])
+            else:
+                entries.append(archive_entry(item, child_path, unique))
+    state['queue'], state['used'] = list(queue), list(used)
+    token = encode_cursor(state) if queue else None
+    if token and len(token) > 200000:
+        raise ValueError('폴더가 너무 큽니다. 하위 폴더별로 다운로드해 주세요.')
+    return jsonify(entries=entries, filename=state['filename'], cursor=token)
+
+
+@app.post('/api/archive/file')
+def archive_file():
+    state = decode_cursor((request.get_json(silent=True) or {}).get('token'))
+    if state.get('kind') != 'archive-file' or state.get('root') != ROOT:
+        raise ValueError('파일 요청이 올바르지 않습니다.')
+    fid = state['path'].split('/')[-1]
+    within_root(fid, state['path'])
+    item = metadata(fid)
+    archive_entry(item, state['path'], zip_name(item['name']))
+    if not LIVE:
+        return Response(('예시 파일: ' + item['name']).encode(), mimetype='application/octet-stream')
+    params = dict(key=KEY)
+    path = 'files/' + fid
+    if item['mimeType'] in EXPORTS:
+        path += '/export'; params['mimeType'] = EXPORTS[item['mimeType']][0]
+    else:
+        params.update(alt='media', supportsAllDrives='true')
+    headers = {}
+    if ROOT_RESOURCE_KEY: headers['X-Goog-Drive-Resource-Keys'] = ROOT + '/' + ROOT_RESOURCE_KEY
+    upstream = urlopen(Request('https://www.googleapis.com/drive/v3/' + path + '?' + urlencode(params), headers=headers), timeout=10)
+    def chunks():
+        with upstream:
+            while True:
+                chunk = upstream.read(65536)
+                if not chunk: break
+                yield chunk
+    return Response(stream_with_context(chunks()), mimetype='application/octet-stream')
 
 
 @app.get('/open')
@@ -277,7 +406,7 @@ def download():
     within_root(fid, request.args.get('path', ''))
     item = metadata(fid)
     if item['mimeType'] == FOLDER:
-        raise ValueError('폴더 전체 다운로드는 지원하지 않습니다.')
+        raise ValueError('폴더를 선택하고 선택 다운로드를 사용하세요.')
     if not LIVE:
         return Response('예시 파일입니다. Google Drive API 연결 후 실제 자료가 표시됩니다.\n',
                         mimetype='text/plain', headers={'Content-Disposition': 'attachment; filename="example.txt"'})

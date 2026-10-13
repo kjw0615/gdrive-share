@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JW Studio</title><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('jw-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch{document.documentElement.dataset.theme='light'}</script><script src="/fflate.min.js" defer></script>
 <style>
 :root{--green:#3ecf8e;--green-deep:#24b47e;--ink:#171717;--muted:#707070;--line:#dfdfdf;--soft:#fafafa}
 *{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font:16px/1.5 Inter,'Segoe UI','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;-webkit-font-smoothing:antialiased}button,input,a{-webkit-tap-highlight-color:transparent}a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--green-deep);outline-offset:3px}
@@ -12,19 +13,25 @@ table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{text-align:le
 @media(max-width:359px){.top-caption{display:none}.file-size{padding-left:0}.file-actions{grid-column:1/-1}.actions{justify-content:flex-start}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 .brand-logo{display:block;width:clamp(145px,16vw,190px);height:auto}.footer-name{display:flex;align-items:center;gap:6px}.footer-symbol{width:32px;height:32px;object-fit:contain}.file-location{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
+
+.top-controls{display:flex;align-items:center;gap:16px}.selection-bar{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:16px 24px;border-bottom:1px solid var(--line);font-size:13px}.select-all{display:flex;gap:8px;align-items:center;cursor:pointer}.selection-bar input[type=checkbox],.file-check{appearance:auto;accent-color:var(--green-deep);width:18px;height:18px;min-height:18px;padding:0;flex-shrink:0;cursor:pointer}.file-check{margin:0}.check-hit{display:flex;align-items:center;justify-content:center;min-width:28px;min-height:44px;flex-shrink:0}.file-name{gap:10px}#zip-status{flex-basis:100%;color:var(--muted)}#zip-status:empty{display:none}.top-controls .action{min-height:40px}.file-size{padding-left:0}
+html[data-theme=dark]{color-scheme:dark;--ink:#ededed;--muted:#a3a3a3;--line:#383838;--soft:#252525}html[data-theme=dark] body,html[data-theme=dark] .panel{background:#1c1c1c}html[data-theme=dark] .topbar,html[data-theme=dark] .footer-inner,html[data-theme=dark] td,html[data-theme=dark] #status,html[data-theme=dark] tbody tr{border-color:var(--line)}html[data-theme=dark] tbody tr:hover{background:#242424}html[data-theme=dark] input:focus{background:#202020}html[data-theme=dark] .action{background:#252525;color:var(--ink);border-color:#454545}html[data-theme=dark] .action:hover{background:#333}html[data-theme=dark] .action-download{background:#203d30;border-color:#316d4f}html[data-theme=dark] .action-download:hover{background:var(--green);color:#171717}html[data-theme=dark] .action:disabled{background:#252525;color:#777;border-color:#383838}html[data-theme=dark] .brand-logo,html[data-theme=dark] .footer-symbol{filter:brightness(0) invert(1)}
+@media(max-width:767px){.top-caption{display:none}.selection-bar{padding:14px 16px;gap:10px}.selection-bar .action{font-size:12px;padding:8px 10px}.file-size{padding-left:72px}.top-controls{gap:8px}.brand-logo{width:145px}}
+@media(max-width:359px){.file-size{padding-left:0}.selection-bar{gap:8px}}
 </style>
 <main>
-<div class="topbar"><a class="brand" href="/" aria-label="JW Studio 첫 화면"><img class="brand-logo" src="/jw-studio-logo.png" alt="JW Studio" width="2079" height="756"></a><span class="top-caption">JW STUDIO LIBRARY</span></div>
+<div class="topbar"><a class="brand" href="/" aria-label="JW Studio 첫 화면"><img class="brand-logo" src="/jw-studio-logo.png" alt="JW Studio" width="2079" height="756"></a><div class="top-controls"><span class="top-caption">JW STUDIO LIBRARY</span><button id="theme-toggle" class="action" type="button" aria-label="다크모드 전환">다크모드</button></div></div>
 <header><span class="label">YOUR FILES, IN ONE PLACE</span><h1>필요한 자료를 한곳에서.</h1><p>폴더를 둘러보고, 문서를 열고, 필요한 파일을 내려받으세요.</p></header>
 <div id="notice" class="notice" hidden>예시 자료가 표시되고 있습니다.</div>
 <section class="panel" aria-label="공유 파일 목록">
 <div class="toolbar"><nav id="crumbs" aria-label="폴더 경로"></nav><div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="search" type="search" placeholder="하위 폴더까지 검색" aria-label="현재 및 하위 폴더에서 파일명 검색"></div></div>
-<div class="scroll"><table><thead><tr><th scope="col">파일 / 폴더명</th><th scope="col">크기</th><th scope="col">열기 / 다운로드</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="selection-bar"><label class="select-all"><input id="select-all" type="checkbox"> 전체 선택</label><span id="selected-count" role="status">0개 선택</span><button id="clear-selection" class="action" type="button">선택 해제</button><button id="download-selected" class="action action-download" type="button" disabled>선택 다운로드</button><span id="zip-status" role="status" aria-live="polite"></span></div><div class="scroll"><table><thead><tr><th scope="col">파일 / 폴더명</th><th scope="col">크기</th><th scope="col">열기 / 다운로드</th></tr></thead><tbody id="rows"></tbody></table></div>
 <div id="status" role="status" aria-live="polite"></div></section>
 <footer class="footer"><div class="footer-inner"><span class="footer-name"><img class="footer-symbol" src="/jw-studio-symbol.png" alt="" width="1254" height="1254"> © <span id="year"></span> JW Studio</span><span>자료의 저작권은 각 권리자에게 있습니다.</span></div></footer>
 </main>
 <script>
 document.getElementById('year').textContent=new Date().getFullYear();
+const selected=new Map();let zipBusy=false;
 let files=[], folderFiles=[], currentPath='', sequence=0, searchTimer, searchController;const $=id=>document.getElementById(id), folderType='application/vnd.google-apps.folder';
 function button(text, action){const el=document.createElement('button');el.textContent=text;el.onclick=action;return el}
 function fileType(f){
@@ -56,18 +63,48 @@ function actionLink(label,route,f){const a=document.createElement('a');a.classNa
 function render(){
  const list=files;$('rows').replaceChildren();
  for(const f of list){
-  const tr=document.createElement('tr'),name=document.createElement('td'),isFolder=f.mimeType===folderType,wrap=document.createElement('div');wrap.className='file-name';wrap.append(fileIcon(f));
+  const tr=document.createElement('tr'),name=document.createElement('td'),isFolder=f.mimeType===folderType,wrap=document.createElement('div');wrap.className='file-name';const hit=document.createElement('label');hit.className='check-hit';const check=document.createElement('input');check.type='checkbox';check.className='file-check';check.checked=selected.has(f.path);check.disabled=f.mimeType!==folderType&&f.capabilities?.canDownload===false;check.setAttribute('aria-label',f.name+' 선택');check.onchange=()=>{if(check.checked)selected.set(f.path,f);else selected.delete(f.path);updateSelection()};hit.append(check);wrap.append(hit,fileIcon(f));
   const title=document.createElement('span');title.className='file-title';title.append(isFolder?button(f.name,()=>navigate(f.path)):document.createTextNode(f.name));if(f.location){const location=document.createElement('span');location.className='file-location';location.textContent=f.location;title.append(location)}wrap.append(title);name.append(wrap);tr.append(name);
   const sizeCell=document.createElement('td');sizeCell.className='file-size';sizeCell.textContent=f.size?size(Number(f.size)):'—';tr.append(sizeCell);
   const actions=document.createElement('td'),group=document.createElement('div');group.className='actions';actions.className='file-actions';
-  if(!isFolder){
-   if(f.canOpen){const open=actionLink('바로열기','/open',f);open.target='_blank';open.rel='noopener';group.append(open)}
-   if(f.capabilities?.canDownload===false){const disabled=document.createElement('button');disabled.className='action';disabled.textContent='다운로드 제한';disabled.disabled=true;group.append(disabled)}
-   else {const a=actionLink('다운로드','/download',f);if(f.downloadFormat)a.title=f.downloadFormat.toUpperCase()+' 파일로 다운로드';group.append(a)}
-  }else {const hint=document.createElement('span');hint.className='folder-hint';hint.textContent='폴더';group.append(hint)}
+  if(f.mimeType!==folderType&&f.capabilities?.canDownload===false){const disabled=document.createElement('button');disabled.className='action';disabled.textContent='다운로드 제한';disabled.disabled=true;group.append(disabled)}
+  else if(isFolder){const download=button('다운로드',()=>downloadZip([f]));download.className='action action-download';group.append(download)}
+  else {const a=actionLink('다운로드','/download',f);if(f.downloadFormat)a.title=f.downloadFormat.toUpperCase()+' 파일로 다운로드';group.append(a)}
+  if(!isFolder&&f.canOpen){const open=actionLink('바로열기','/open',f);open.target='_blank';open.rel='noopener';group.append(open)}
   actions.append(group);tr.append(actions);$('rows').append(tr);
  }
+ updateSelection();
  $('status').textContent=list.length?`${list.length}개의 자료`:'표시할 자료가 없습니다.';
+}
+function updateSelection(){
+ $('selected-count').textContent=selected.size+'개 선택';$('download-selected').disabled=zipBusy||!selected.size;
+ const eligible=files.filter(f=>f.mimeType===folderType||f.capabilities?.canDownload!==false),checked=eligible.filter(f=>selected.has(f.path)).length;
+ $('select-all').checked=eligible.length>0&&checked===eligible.length;$('select-all').indeterminate=checked>0&&checked<eligible.length;
+}
+$('select-all').onchange=()=>{for(const f of files){if(f.mimeType!==folderType&&f.capabilities?.canDownload===false)continue;if($('select-all').checked)selected.set(f.path,f);else selected.delete(f.path)}render()};
+$('clear-selection').onclick=()=>{selected.clear();render()};
+$('download-selected').onclick=()=>downloadZip([...selected.values()]);
+function themeLabel(){const dark=document.documentElement.dataset.theme==='dark';$('theme-toggle').textContent=dark?'일반모드':'다크모드';$('theme-toggle').setAttribute('aria-label',dark?'일반모드로 전환':'다크모드로 전환');$('theme-toggle').setAttribute('aria-pressed',String(dark))}
+$('theme-toggle').onclick=()=>{const theme=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=theme;try{localStorage.setItem('jw-theme',theme)}catch{}themeLabel()};themeLabel();
+async function archiveRequest(route,body){const response=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!response.ok){const error=await response.json().catch(()=>({error:'다운로드에 실패했습니다.'}));throw Error(error.error)}return response}
+async function downloadZip(items){
+ if(zipBusy)return;if(!items.length)return;zipBusy=true;updateSelection();$('zip-status').textContent='폴더와 파일을 확인하는 중…';
+ try{
+  if(!window.fflate)throw Error('압축 도구를 불러오지 못했습니다. 새로고침 후 다시 시도하세요.');
+  let cursor=null,entries=[],filename;do{const response=await archiveRequest('/api/archive/manifest',cursor?{cursor}:{items:items.map(f=>({path:f.path}))});const data=await response.json();entries.push(...data.entries);filename=data.filename;cursor=data.cursor;$('zip-status').textContent=entries.length+'개 항목 확인 중…'}while(cursor);
+  const archive=Object.create(null),used=new Set();let total=0,index=0;
+  for(const entry of entries){
+   let name=entry.name;let n=2;while(used.has(name)){const directory=name.endsWith('/');name=entry.name.replace(/\/$/,'')+' ('+(n++)+')'+(directory?'/':'')}used.add(name);
+   if(entry.directory){archive[name]=new Uint8Array();continue}
+   $('zip-status').textContent=`파일을 받는 중 ${++index} / ${entries.filter(e=>!e.directory).length}`;
+   const response=await archiveRequest('/api/archive/file',{token:entry.token});const reader=response.body.getReader();const chunks=[];let length=0;
+   while(true){const {done,value}=await reader.read();if(done)break;total+=value.length;length+=value.length;if(total>256*1024*1024){await reader.cancel();throw Error('브라우저 메모리를 위해 한번에 256MB까지 지원합니다. 나누어 선택해 주세요.')}chunks.push(value)}
+   const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length}archive[name]=bytes;
+  }
+  $('zip-status').textContent='ZIP으로 압축하는 중…';
+  const zip=await new Promise((resolve,reject)=>window.fflate.zip(archive,{level:6},(error,data)=>error?reject(error):resolve(data)));
+  const url=URL.createObjectURL(new Blob([zip],{type:'application/zip'}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);$('zip-status').textContent='ZIP 다운로드를 시작했습니다.';
+ }catch(error){$('zip-status').textContent=error.message}finally{zipBusy=false;updateSelection()}
 }
 function size(n){const units=['B','KB','MB','GB','TB'];let i=0;while(n>=1024&&i<4){n/=1024;i++}return n.toFixed(i?1:0)+' '+units[i]}
 async function load(path=''){clearTimeout(searchTimer);searchController?.abort();currentPath=path;const id=path?path.split('/').at(-1):'';const seq=++sequence;files=[];$('rows').replaceChildren();$('status').textContent='자료를 불러오는 중…';$('search').disabled=true;try{const r=await fetch('/api/files?folder='+encodeURIComponent(id||'')+'&path='+encodeURIComponent(path));const data=await r.json();if(seq!==sequence)return;if(!r.ok)throw Error(data.error);files=data.files;folderFiles=data.files;currentPath=data.breadcrumbs.at(-1).path;$('notice').hidden=!data.demo;$('search').value='';$('crumbs').replaceChildren();for(const [i,c] of data.breadcrumbs.entries()){if(i)$('crumbs').append(' / ');$('crumbs').append(button(c.name,()=>navigate(c.path)))}render()}catch(e){if(seq===sequence)$('status').textContent=e.message}finally{if(seq===sequence)$('search').disabled=false}}
