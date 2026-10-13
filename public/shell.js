@@ -3,10 +3,12 @@
 (()=>{
 const $=id=>document.getElementById(id),dialog=$('admin-dialog');if(!dialog)return;
 let auth={authenticated:false},timer;window.JWAdmin={authenticated:false,csrf:null};
-function publish(data){auth=data;window.JWAdmin=data;$('admin-entry').hidden=!!data.authenticated;$('admin-session').hidden=!data.authenticated;$('admin-logout').textContent='로그아웃';window.dispatchEvent(new CustomEvent('jw-admin-change',{detail:data}));clearTimeout(timer);if(data.authenticated){const remaining=new Date(data.expires_at).getTime()-Date.now();timer=setTimeout(refresh,Math.max(1000,Math.min(60000,remaining)))}}
+function publish(data){auth=data;window.JWAdmin=data;$('admin-session').hidden=!data.authenticated;$('admin-logout').textContent='로그아웃';window.dispatchEvent(new CustomEvent('jw-admin-change',{detail:data}));clearTimeout(timer);if(data.authenticated){const remaining=new Date(data.expires_at).getTime()-Date.now();timer=setTimeout(refresh,Math.max(1000,Math.min(60000,remaining)))}}
 async function refresh(){try{const response=await fetch('/api/admin/status',{credentials:'same-origin'});if(!response.ok)throw Error();publish(await response.json())}catch{publish({authenticated:false})}return window.JWAdmin}
 window.JWAdminReady=refresh();window.JWAdminRefresh=refresh;
-$('admin-entry').onclick=()=>{$('admin-password').value='';$('admin-login-status').textContent='';dialog.showModal();$('admin-password').focus()};
+function openAdmin(){if(auth.authenticated||dialog.open)return;$('admin-password').value='';$('admin-login-status').textContent='';dialog.showModal();$('admin-password').focus()}
+$('copyright-admin-trigger').ondblclick=openAdmin;
+$('copyright-admin-trigger').onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openAdmin()}};
 $('admin-dialog-close').onclick=()=>{dialog.close();$('admin-password').value=''};dialog.addEventListener('close',()=>{$('admin-password').value=''});
 $('admin-login-form').onsubmit=async event=>{event.preventDefault();$('admin-login-submit').disabled=true;$('admin-login-status').textContent='확인 중…';try{const response=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:$('admin-password').value}),credentials:'same-origin'});const data=await response.json();if(!response.ok)throw Error(data.error||'로그인에 실패했습니다.');publish(data);dialog.close();$('admin-password').value=''}catch(error){$('admin-login-status').textContent=error.message}finally{$('admin-login-submit').disabled=false}};
 $('admin-logout').onclick=async()=>{$('admin-logout').disabled=true;try{const response=await fetch('/api/admin/logout',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-CSRF':auth.csrf||''},body:'{}',credentials:'same-origin'});if(!response.ok)throw Error('로그아웃에 실패했습니다.');publish({authenticated:false})}catch(error){$('admin-logout').textContent='다시 로그아웃'}finally{$('admin-logout').disabled=false}};
