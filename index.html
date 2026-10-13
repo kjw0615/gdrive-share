@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JW Studio</title><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('jw-theme')||'dark'}catch{document.documentElement.dataset.theme='dark'}</script><script src="/fflate.min.js" defer></script>
+<link rel="stylesheet" href="/shell.css"><script src="/shell.js" defer></script>
 <style>
 :root{--green:#3ecf8e;--green-deep:#24b47e;--ink:#171717;--muted:#707070;--line:#dfdfdf;--soft:#fafafa}
 *{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font:16px/1.5 Inter,'Segoe UI','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;-webkit-font-smoothing:antialiased}button,input,a{-webkit-tap-highlight-color:transparent}a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--green-deep);outline-offset:3px}
@@ -26,8 +27,8 @@ select{font:inherit;font-size:13px;color:var(--ink);background:var(--soft);borde
 .panel[data-view=card] thead{display:block;padding:8px 20px;border-bottom:1px solid var(--line);background:var(--soft)}.panel[data-view=card] thead tr{display:flex;gap:24px}.panel[data-view=card] thead th{display:block;width:auto;padding:0}.panel[data-view=card] thead th:last-child{display:none}
 @media(max-width:767px){.search-tools{flex:none;width:100%}.type-filter-label{flex-basis:118px}.type-filter-label select{font-size:14px}.panel thead{position:static;display:block;width:auto;height:auto;clip:auto;overflow:visible;white-space:normal;padding:8px 16px;background:var(--soft);border-bottom:1px solid var(--line)}.panel thead tr{display:flex;gap:24px}.panel thead th{display:block;width:auto;padding:0}.panel thead th:last-child{display:none}.column-sort{min-height:44px}.selection-bar .view-switch{margin-left:auto}}
 </style>
-<main>
-<div class="topbar"><a class="brand" href="/" aria-label="JW Studio 첫 화면"><img class="brand-logo" src="/jw-studio-logo.png" alt="JW Studio" width="2079" height="756"></a><div class="top-controls"><span class="top-caption">JW STUDIO LIBRARY</span><button id="theme-toggle" class="action" type="button" aria-label="다크모드 전환">다크모드</button></div></div>
+<aside id="sidebar" class="sidebar" aria-label="사이트 탐색"><button id="sidebar-close" class="action sidebar-close" type="button" aria-label="메뉴 닫기">닫기</button><a class="sidebar-brand" href="/"><img src="/jw-studio-symbol.png" alt="" width="1254" height="1254">JW Studio</a><span class="nav-caption">WORKSPACE</span><nav><a href="/" data-page="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 6h7l2 3h9v11H3z"/></svg>자료실</a><a href="/board" data-page="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>게시판</a></nav><div class="sidebar-bottom">자료와 이야기가 모이는 공간.<br>JW Studio Workspace<div class="admin-controls"><button id="admin-entry" class="admin-entry" type="button" aria-label="관리자 접속" title="">·</button><div id="admin-session" class="admin-session" hidden><span>관리자 접속 중</span><button id="admin-logout" class="action" type="button">로그아웃</button></div></div></div></aside><dialog id="admin-dialog" class="admin-dialog" aria-labelledby="admin-heading"><form id="admin-login-form"><div class="admin-dialog-top"><h2 id="admin-heading">관리자 접속</h2><button id="admin-dialog-close" type="button" class="action" aria-label="닫기">닫기</button></div><label for="admin-password">관리자 비밀번호</label><input id="admin-password" type="password" autocomplete="current-password" maxlength="1024" required><p id="admin-login-status" role="status" aria-live="polite"></p><button id="admin-login-submit" class="action action-download" type="submit">로그인</button></form></dialog><button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="메뉴 닫기" hidden></button><div class="app-layout"><main>
+<div class="topbar"><button id="sidebar-open" class="action nav-toggle" type="button" aria-controls="sidebar" aria-expanded="false">메뉴</button><a class="brand" href="/" aria-label="JW Studio 첫 화면"><img class="brand-logo" src="/jw-studio-logo.png" alt="JW Studio" width="2079" height="756"></a><div class="top-controls"><span class="top-caption">JW STUDIO LIBRARY</span><button id="theme-toggle" class="action" type="button" aria-label="다크모드 전환">다크모드</button></div></div>
 <header><span class="label">YOUR FILES, IN ONE PLACE</span><h1>필요한 자료를 한곳에서.</h1><p>폴더를 둘러보고, 문서를 열고, 필요한 파일을 내려받으세요.</p></header>
 <div id="notice" class="notice" hidden>예시 자료가 표시되고 있습니다.</div>
 <section id="library-panel" class="panel" aria-label="공유 파일 목록">
@@ -35,7 +36,7 @@ select{font:inherit;font-size:13px;color:var(--ink);background:var(--soft);borde
 <div class="selection-bar"><label class="select-all"><input id="select-all" type="checkbox"> 전체 선택</label><span id="selected-count" role="status">0개 선택</span><button id="clear-selection" class="action" type="button">선택 해제</button><button id="download-selected" class="action action-download" type="button" disabled>선택 다운로드</button><div class="view-switch" role="group" aria-label="보기 방식"><button id="view-list" type="button" class="action" aria-pressed="true">목록</button><button id="view-card" type="button" class="action" aria-pressed="false">카드</button></div><span id="selection-summary"></span><div class="download-progress" id="download-progress" hidden><progress id="zip-progress" max="100" value="0" aria-label="ZIP 다운로드 진행률"></progress><span id="zip-status" role="status" aria-live="polite"></span><button id="cancel-download" class="action" type="button" hidden>취소</button></div></div><div class="scroll"><table><thead><tr><th id="name-column" scope="col" aria-sort="ascending"><button id="sort-name" class="column-sort" type="button">파일 / 폴더명<span id="name-order" aria-hidden="true"> ↑</span></button></th><th id="size-column" scope="col" aria-sort="none"><button id="sort-size" class="column-sort" type="button">크기<span id="size-order" aria-hidden="true"></span></button></th><th scope="col">열기 / 다운로드</th></tr></thead><tbody id="rows"></tbody></table></div>
 <div id="status" role="status" aria-live="polite"></div></section>
 <footer class="footer"><div class="footer-inner"><span class="footer-name"><img class="footer-symbol" src="/jw-studio-symbol.png" alt="" width="1254" height="1254"> © <span id="year"></span> JW Studio</span><span>자료의 저작권은 각 권리자에게 있습니다.</span></div></footer>
-</main>
+</main></div>
 <script>
 document.getElementById('year').textContent=new Date().getFullYear();
 const selected=new Map();let zipBusy=false, zipController=null;let sortMode='name-asc';let viewMode='list';try{viewMode=localStorage.getItem('jw-view')||'list'}catch{}
@@ -177,8 +178,15 @@ async function searchAll(){
   }while(cursor);
  }catch(error){if(error.name!=='AbortError'&&!controller.signal.aborted)$('status').textContent=error.message}
 }
-function navigate(id){location.hash=encodeURIComponent(id)}
-window.addEventListener('hashchange',()=>load(decodeURIComponent(location.hash.slice(1))));
+function cleanUrl(){return location.pathname+location.search}
+function navigate(path){
+ if(path===currentPath)return;
+ history.pushState({jwFolder:path},'',cleanUrl());load(path);
+}
+window.addEventListener('popstate',event=>load(typeof event.state?.jwFolder==='string'?event.state.jwFolder:''));
 $('search').oninput=()=>{searchController?.abort();clearTimeout(searchTimer);if(!$('search').value.trim()){files=folderFiles;render();return}searchTimer=setTimeout(searchAll,350)};
-load(decodeURIComponent(location.hash.slice(1)));
+let initialPath=typeof history.state?.jwFolder==='string'?history.state.jwFolder:'';
+// Migrate old bookmarks once, then remove the Drive ID from the address bar.
+if(location.hash){try{initialPath=decodeURIComponent(location.hash.slice(1))}catch{initialPath=''}}
+history.replaceState({jwFolder:initialPath},'',cleanUrl());load(initialPath);
 </script></html>

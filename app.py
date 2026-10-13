@@ -151,6 +151,15 @@ def can_open(item):
 
 app = Flask(__name__, static_folder=None)
 app.json.ensure_ascii = False
+app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024
+from board import board
+app.register_blueprint(board)
+from admin import admin, initialize_admin
+app.register_blueprint(admin)
+try:
+    initialize_admin()
+except Exception as error:
+    app.logger.warning('Administrator initialization unavailable: %s', type(error).__name__)
 
 
 @app.after_request
@@ -263,7 +272,7 @@ def search():
 # Vercel serves public/ directly; these routes also support local Flask preview.
 @app.get('/<asset>')
 def brand_asset(asset):
-    if asset not in ('jw-studio-logo.png', 'jw-studio-symbol.png', 'favicon-32x32.png', 'fflate.min.js', 'fflate-LICENSE.txt'):
+    if asset not in ('jw-studio-logo.png', 'jw-studio-symbol.png', 'favicon-32x32.png', 'fflate.min.js', 'fflate-LICENSE.txt', 'shell.css', 'shell.js', 'board.js'):
         return jsonify(error='페이지를 찾을 수 없습니다.'), 404
     return send_from_directory(Path(__file__).with_name('public'), asset)
 

@@ -109,7 +109,7 @@ Google API 키의 IP 제한을 로컬 공인 IP로 설정했다면 Vercel 호출
 - ZIP, 실행 파일 등 그 외 파일에는 다운로드만 표시합니다.
 - Google 문서는 편집기 열기와 파일 내보내기를 구분합니다. 다운로드 제한 자료는 다운로드 버튼을 비활성화합니다.
 - PDF, Word, Excel, PowerPoint, 이미지, 압축 파일 등은 색상과 형식명이 있는 SVG 아이콘으로 구분합니다. 외부 이미지 서비스는 사용하지 않습니다.
-- 작업 위치: C:\Users\admin\Desktop\web. Vercel에는 변경한 파일을 반영하여 재배포하세요.
+- Vercel에는 변경한 파일을 반영하여 재배포하세요.
 
 ## 반응형 디자인
 
@@ -142,3 +142,41 @@ ZIP은 fflate 0.8.3을 사용하여 브라우저에서 압축합니다. public/f
 ZIP과 일반 파일 수신 중 수신 바이트와 현재 파일을 표시합니다. 전체 용량이 알려졌을 때 수신 퍼센트를, 알 수 없을 때 진행 중 표시를 사용합니다. 폴더 확인 및 ZIP 압축 단계도 별도로 표시합니다. 취소는 네트워크 요청 또는 압축 작업을 중단하며 미완성 파일을 저장하지 않습니다. 브라우저 저장을 시작한 뒤에는 브라우저 다운로드 화면에서 취소해야 합니다.
 
 파일 유형 필터는 검색 입력창 옆에 배치합니다. 모바일 및 카드 보기에서도 이름/크기 컬럼의 정렬 버튼을 제공합니다.
+
+## 폴더 이동 주소
+
+폴더 경로는 URL 해시 대신 브라우저 history.state에 저장합니다. 폴더를 이동해도 주소창에는 기본 사이트 주소만 표시하며 뒤로/앞으로 가기와 같은 탭의 새로고침을 지원합니다. 기존 #경로 링크는 최초 접속 때 읽어 해당 폴더를 열고 주소에서 제거합니다.
+주소를 복사해 새 탭이나 다른 사람에게 전달하면 자료실 첫 화면이 열립니다. 특정 폴더 경로 공유 기능은 제공하지 않습니다. 이는 주소 표시 방식 변경이며 파일 접근 권한이나 개발자 도구에서 확인할 수 있는 요청 정보를 숨기는 기능은 아닙니다.
+
+## 게시판 및 사이드바
+
+왼쪽 메뉴에서 자료실(/)과 게시판(/board)을 전환합니다. 스마트폰에서는 메뉴 버튼으로 사이드바를 엽니다. 게시판은 검색, 페이지 이동, 글 작성/상세/수정/삭제를 지원합니다. 로그인 없는 공개 게시판이며 수정/삭제에는 작성 시 설정한 글 비밀번호가 필요합니다. 비밀번호는 해시로 저장하고 화면이나 API로 반환하지 않습니다. 삭제한 글은 deleted_at으로 목록에서 제외합니다.
+
+DB 접속은 서버 전용 db.py에서 처리합니다. .env와 Vercel 환경변수를 지원하고 URL에는 DATABASE_URL, POSTGRES_URL, POSTGRES_URL_NON_POOLING 순으로 우선순위가 있습니다. URL이 없으면 POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DATABASE 또는 POSTGRES_DB를 사용합니다. 기본 DB 이름은 postgres이며 스키마는 public입니다.
+
+현재 환경의 DB에 public.jw_board_posts 테이블을 생성했습니다. 다른 DB로 변경할 때만 해당 DB 계정으로 `python init_db.py`를 실행하세요. migrations/001_board.sql은 이 게시판 테이블만 생성하고 RLS를 활성화합니다. 테이블을 만든 서버 계정이 소유자이므로 서버에서 접근하며 anon/authenticated의 직접 테이블 접근 권한은 제거합니다. 배포 시에도 같은 DB 계정을 사용하세요. 테이블을 다른 계정이 생성했다면 해당 계정의 접근 권한과 RLS 정책을 별도로 설정해야 합니다.
+
+로컬 실행:
+```powershell
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe app.py
+```
+
+Vercel에는 기존 Drive 환경변수와 함께 현재 .env의 DB 환경변수를 등록하고 재배포하세요. .env 자체는 Git에 올리지 않습니다. Vercel Storage의 자동 POSTGRES_URL이 등록되어 있으면 개별 설정보다 우선하므로 같은 서버 DB 계정의 URL인지 확인하세요.
+
+새 배포 파일: board.py, db.py, init_db.py, board.html, migrations/001_board.sql, public/board.js, public/shell.css, public/shell.js. app.py, index.html, requirements.txt도 함께 반영하세요.
+
+## 관리자 접속
+
+사이드바 맨 아래 작은 점(·) 버튼을 누르면 관리자 로그인 창이 열립니다. 버튼의 위치는 진입을 눈에 띄지 않게 하는 장치이며 실제 권한은 서버의 비밀번호 검증과 세션 검사로 보호합니다.
+서버 시작 시 public.jw_admin_credentials에 관리자 해시가 없으면 SUPER_PASSWORD 환경변수(로컬은 .env)를 읽고 PBKDF2-SHA256 해시를 저장합니다. 저장된 해시가 있으면 SUPER_PASSWORD를 읽거나 해시를 덮어쓰지 않습니다. 따라서 .env 값을 바꾸는 것만으로 기존 관리자 비밀번호가 변경되지 않습니다.
+관리자 세션은 로그인 시점부터 60분 동안 유지됩니다. 토큰 원문은 HttpOnly/SameSite=Strict 쿠키에, 토큰 SHA256 해시는 public.jw_admin_sessions에 저장합니다. Vercel/HTTPS에서는 Secure 쿠키를 사용합니다. 로그아웃 시 DB 세션을 삭제하므로 기존 토큰도 사용할 수 없습니다. 로그인 5회 연속 실패 시 해당 접속 주소에서 15분간 제한합니다.
+관리자로 접속하면 사이드바 아래에 접속 상태와 로그아웃 버튼이 표시됩니다. 관리자는 글 비밀번호 없이 모든 게시글을 삭제할 수 있으며, 수정 버튼은 숨기고 PATCH 요청도 서버에서 거부합니다. 삭제는 기존 게시판과 같이 소프트 삭제입니다.
+public.jw_admin_credentials, jw_admin_sessions, jw_admin_login_limits는 RLS 활성화 및 anon/authenticated 직접 접근 차단 상태로 생성됩니다. 관리자 비밀번호·세션 토큰은 로그나 클라이언트 응답에 포함하지 않습니다. 세션 검증용 CSRF 토큰만 로그인한 브라우저에 제공합니다.
+현재 게시판 테이블 소유자가 postgres이고 서버 계정이 jw_public_user이므로 migrations/003_board_server_policy.sql을 postgres로 실행해야 게시판 CRUD가 허용됩니다. 이 정책은 해당 게시판 테이블과 서버 계정에만 적용하며 RLS를 끄지 않습니다.
+Vercel에서 처음 관리자 해시를 만들 때 SUPER_PASSWORD를 등록해야 합니다. 이미 같은 DB에 해시가 저장되어 있다면 부팅 때 이 값은 필요하지 않습니다. admin.py와 새 migration 파일, 수정된 HTML/JS/CSS/app.py를 함께 배포하세요.
+
+## Git 및 배포 제외 파일
+
+.env, 가상환경, 캐시, SQL/migrations, init_db.py, 테스트/작업 폴더는 Git과 배포에서 제외합니다. README.md는 Git에 포함하고 배포 번들에서만 제외합니다. 로컬 파일은 보존합니다. 관리자 테이블 초기화 SQL은 admin.py 안에 있어 SQL 파일 없이도 서버를 시작할 수 있습니다.
+.gitignore, .vercelignore, vercel.json은 배포 설정이므로 Git에 포함합니다. public/ 안의 JS/CSS, 이미지, ZIP 라이브러리 및 라이선스는 필요 파일이므로 포함합니다.
