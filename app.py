@@ -75,7 +75,20 @@ DEMO = [
     dict(id='nested-file', name='폴더 탐색 예제.txt', mimeType='text/plain', size='80', parents=['sample-folder']),
 ]
 
+from drive_cache import DriveCache
+DRIVE_CACHE = DriveCache()
+
+
 def api(path, params):
+    # Only cache library browsing/search; permission and download checks stay fresh.
+    if has_request_context() and request.endpoint in ('files', 'search'):
+        cache_key = (ROOT, ROOT_RESOURCE_KEY, KEY, path, tuple(sorted(params.items())))
+        return DRIVE_CACHE.fetch(cache_key, lambda: fetch_api(path, params),
+                                 fresh=request.args.get('fresh') == '1')
+    return fetch_api(path, params)
+
+
+def fetch_api(path, params):
     params = dict(params, key=KEY)
     headers = {}
     if ROOT_RESOURCE_KEY:
