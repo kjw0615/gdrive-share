@@ -1,5 +1,9 @@
 """Server-only PostgreSQL configuration; no credentials are returned to the browser."""
 import os
+import atexit
+from threading import Lock
+from contextlib import contextmanager
+from psycopg_pool import ConnectionPool
 from pathlib import Path
 from urllib.parse import urlparse, unquote
 import psycopg
@@ -25,7 +29,7 @@ def load_db_config():
                 os.environ.setdefault(key, value)
 
 
-def connect():
+def connection_settings():
     load_db_config()
     url = os.getenv('DATABASE_URL') or os.getenv('POSTGRES_URL') or os.getenv('POSTGRES_URL_NON_POOLING')
     if url:
@@ -37,4 +41,28 @@ def connect():
         settings = dict(host=os.getenv('POSTGRES_HOST'), port=int(os.getenv('POSTGRES_PORT', '5432')), user=os.getenv('POSTGRES_USER'), password=os.getenv('POSTGRES_PASSWORD'), dbname=os.getenv('POSTGRES_DATABASE') or os.getenv('POSTGRES_DB') or 'postgres')
         if not all(settings.get(k) for k in ('host', 'user', 'password')):
             raise RuntimeError('Database configuration is missing')
-    return psycopg.connect(**settings, sslmode='require', connect_timeout=10, prepare_threshold=None, row_factory=dict_row, options='-c statement_timeout=8000')
+    return dict(**settings, sslmode='require', connect_timeout=10, prepare_threshold=None, row_factory=dict_row, options='-c statement_timeout=8000')
+
+
+_pool = None
+_pool_lock = Lock()
+
+
+def get_pool():
+    global _pool
+    with _pool_lock:
+        if _pool is None:
+            pool = ConnectionPool(kwargs=connection_settings(), min_size=0, max_size=3,
+                                  timeout=10, max_idle=60, max_lifetime=300,
+                                  check=ConnectionPool.check_connection, open=False)
+            pool.open()
+            _pool = pool
+            atexit.register(pool.close)
+        return _pool
+
+
+@contextmanager
+def connect():
+    # Return the connection after commit/rollback instead of reconnecting per request.
+    with get_pool().connection() as connection:
+        yield connection

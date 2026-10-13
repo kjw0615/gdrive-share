@@ -56,9 +56,22 @@ def listing():
     query = request.args.get('q', '').strip()[:200]
     pattern = '%' + query.replace('!', '!!').replace('%', '!%').replace('_', '!_') + '%'
     where = "deleted_at IS NULL AND (title ILIKE %s ESCAPE '!' OR content ILIKE %s ESCAPE '!' OR author ILIKE %s ESCAPE '!')"
+    # Do not scan every content field for an empty search. Return count and page
+    # together, including an empty page, in one database round trip.
+    if query:
+        parameters = (pattern, pattern, pattern)
+    else:
+        where = 'deleted_at IS NULL'
+        parameters = ()
     with connect() as connection:
-        total = connection.execute('SELECT count(*) AS total FROM public.jw_board_posts WHERE ' + where, (pattern, pattern, pattern)).fetchone()['total']
-        rows = connection.execute('SELECT id,title,author,version,created_at,updated_at FROM public.jw_board_posts WHERE ' + where + ' ORDER BY created_at DESC,id LIMIT 15 OFFSET %s', (pattern, pattern, pattern, (page-1)*15)).fetchall()
+        result = connection.execute(
+            'WITH filtered AS (SELECT id,title,author,version,created_at,updated_at '
+            'FROM public.jw_board_posts WHERE ' + where + '), '
+            'page_rows AS (SELECT * FROM filtered ORDER BY created_at DESC,id LIMIT 15 OFFSET %s) '
+            "SELECT (SELECT count(*) FROM filtered) AS total, "
+            "COALESCE((SELECT jsonb_agg(page_rows ORDER BY created_at DESC,id) FROM page_rows), '[]'::jsonb) AS posts",
+            (*parameters, (page-1)*15)).fetchone()
+        total, rows = result['total'], result['posts']
     return jsonify(posts=[serialize(row) for row in rows], total=total, page=page, page_size=15)
 
 
