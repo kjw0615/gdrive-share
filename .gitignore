@@ -1,0 +1,42 @@
+# Secrets and local configuration
+.env
+.env.*
+*.pem
+*.key
+
+# Python environment and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Database setup helpers and local documentation (not used at runtime)
+/migrations/
+/init_db.py
+*.sql
+
+# Local development, logs, archives, editor and OS files
+/work/
+/outputs/
+/tests/
+/docs/
+/test_*.py
+*.log
+*.zip
+*.bak
+*.tmp
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Vercel local project state; keep vercel.json and .vercelignore tracked
+.vercel/
