@@ -184,6 +184,12 @@ def response_headers(response):
 
 @app.get('/')
 def index():
+    return Response(Path(__file__).with_name('home.html').read_bytes(), mimetype='text/html')
+
+
+# Keep the original Drive library available without listing it on the home page.
+@app.get('/library')
+def library():
     return Response(Path(__file__).with_name('index.html').read_bytes(), mimetype='text/html')
 
 
